@@ -8,7 +8,7 @@ gene_identifier = ("ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG000000230
                    "ENSMUSG00000001655", "ENSMUSG00000022485", "ENSMUSG00000001657", "ENSMUSG00000001661",
                    "ENSMUSG00000076010", "ENSMUSG00000023048")
 
-
+gene_name = ("Itga5", "Hoxc13", "Hoxc8", "Hoxc6", "Hoxc5", "Prr13", "Calcoco1", "Smug1", "Hoxc4", "Mir615")
 
 #Custom API using Biomart to accrss ENSEMBL
 server = Server(host='http://www.ensembl.org')
@@ -40,19 +40,22 @@ result = dataset.query(attributes=["ensembl_gene_id",
                                    "start_position",
                                    "end_position",
                                    "chromosome_name",
+                                   "name_1006",
+                                   "definition_1006",
                                    "description"],
                        filters={'link_ensembl_gene_id': gene_identifier})
 
 #print query
 #print(result)
 table_4 = pd.DataFrame(result)
-print(table_4)
+#print(table_4)
 table_4.to_csv('table_4.csv', index = False)
 
 
 
-
+#Another custom API to access NCBI related database
 #modified from https://entrezpy.readthedocs.io/en/master/functions/efetch_func.html
+
 
 import entrezpy.esearch.esearcher
 import entrezpy.log.logger
@@ -72,8 +75,6 @@ import entrezpy.efetch.efetcher
 #                      'rettype' : 'uilist'})
 #print(analyzer_result.result.count, analyzer_result.result.uids)
 
-
-
 #just fecth a couple of the hits
 #e = entrezpy.efetch.efetcher.Efetcher("entrezpy",
 #                                      "simon.tomlinson@ed.ac.uk",
@@ -88,30 +89,35 @@ import entrezpy.efetch.efetcher
 #print(analyzer.get_result())
 
 
+
+
 #RESTAPI
+
+#REST API to access QuickGO for gene ontolpgy information
 import requests, sys
 
 for i in range (len(gene_identifier)):
 
-    server = "https://rest.ensembl.org"
-    ext = f"/lookup/id/{gene_identifier[i]}"
+    server = "https://rest.uniprot.org"
+#    ext = f"/QuickGO/services/ontology/go/search?query={gene_name[i]}"
+    ext = f"/uniprotkb/search?query=keyword:{gene_identifier}&compressed=false"
 
-    r = requests.get(server + ext, headers={"Content-Type": "application/json"})
+    r = requests.get(server + ext, headers={"Accept" : "application/json"})
 
     if not r.ok:
         r.raise_for_status()
         sys.exit()
 
     decoded = r.json()
+    print(r)
 
     # print the whole thing as text
-    #print(repr(decoded),"\n")
-    #print(decoded["id"], ",",
-    #      decoded["display_name"], ",",
-    #      decoded["biotype"], ",",
-    #      decoded["description"], ",",
-    #      decoded["species"]
+    print(repr(decoded),"\n")
+
+    #print(decoded["numberOfHits"], ",",
+    #      decoded["results"]
     #      )
-    #time.sleep(0.5)
+
     # extract and print element
     # Notice here I am using a different format of the print statement using f-strings in Python
+    time.sleep(0.5)
