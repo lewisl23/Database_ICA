@@ -27,9 +27,7 @@ table_2 = pd.DataFrame(dataset.list_attributes())
 table_2.to_csv('table_2.csv', index=False, header=True)
 
 #print filters
-#print(dataset.list_filters())
-table_3 = pd.DataFrame(dataset.list_filters())
-table_3.to_csv('table_3.csv', index=False, header=True)
+print(dataset.list_filters())
 
 
 #generate query results- from chosen filters and attributes
@@ -46,9 +44,9 @@ result = dataset.query(attributes=["ensembl_gene_id",
 
 #print query
 #print(result)
-table_4 = pd.DataFrame(result)
+#table_4 = pd.DataFrame(result)
 #print(table_4)
-table_4.to_csv('table_4.csv', index = False)
+#table_4.to_csv('table_4.csv', index = False)
 
 
 

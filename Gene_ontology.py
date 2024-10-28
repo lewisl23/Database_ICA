@@ -44,5 +44,5 @@ GO_data = {
     'Function' : Function
 }
 
-table_5 = pd.DataFrame(GO_data)
-table_5.to_csv('table_5.csv')
+GO_table = pd.DataFrame(GO_data)
+GO_table.to_csv('GO_table.csv', index = False)

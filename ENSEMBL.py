@@ -43,6 +43,6 @@ result = dataset.query(attributes=["ensembl_gene_id",
 
 #print query
 #print(result)
-table_4 = pd.DataFrame(result)
-#print(table_4)
-table_4.to_csv('table_4.csv', index = False)
+ENSEMBL_table = pd.DataFrame(result)
+
+ENSEMBL_table.to_csv('ENSEMBL_table.csv', index = False)
