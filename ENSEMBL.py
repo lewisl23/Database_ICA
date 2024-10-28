@@ -1,4 +1,3 @@
-import time
 from pybiomart import Dataset
 from pybiomart import Server
 import pandas as pd
@@ -26,9 +25,7 @@ table_2 = pd.DataFrame(dataset.list_attributes())
 table_2.to_csv('table_2.csv', index=False, header=True)
 
 #print filters
-#print(dataset.list_filters())
-table_3 = pd.DataFrame(dataset.list_filters())
-table_3.to_csv('table_3.csv', index=False, header=True)
+print(dataset.list_filters())
 
 
 #generate query results- from chosen filters and attributes
@@ -37,7 +34,10 @@ result = dataset.query(attributes=["ensembl_gene_id",
                                    "external_gene_name",
                                    "start_position",
                                    "end_position",
+                                 #  "go_id",
                                    "chromosome_name",
+                                #   "definition_1006",
+                                 #  "namespace_1003",
                                    "description"],
                        filters={'link_ensembl_gene_id': gene_identifier})
 
