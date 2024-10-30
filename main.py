@@ -29,8 +29,8 @@ dataset = Dataset(name='mmusculus_gene_ensembl',host='http://www.ensembl.org')
 
 #print attributes
 #print(dataset.list_attributes())
-table_2 = pd.DataFrame(dataset.list_attributes())
-table_2.to_csv('table_2.csv', index=False, header=True)
+ENSEMBL_attributes = pd.DataFrame(dataset.list_attributes())
+ENSEMBL_attributes.to_csv('ENSEMBL_attributes.csv', index=False, header=True)
 
 #print filters
 #print(dataset.list_filters())
