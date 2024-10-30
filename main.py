@@ -6,17 +6,18 @@ import requests
 import sys
 import time
 
-#List of gene name to include in the database
+#List of gene name for query
 gene_identifier = ("ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG00000023055", "ENSMUSG00000075394",
                    "ENSMUSG00000001655", "ENSMUSG00000022485", "ENSMUSG00000001657", "ENSMUSG00000001661",
                    "ENSMUSG00000076010", "ENSMUSG00000023048")
 
+
 #-----------------------------------------------------------------------------------------------------------------------
 #Access ENSEMBL database using custom api pybiomart
+print("Begin searching with ENSEMBL database")
 
 server = Server(host='http://www.ensembl.org')
 #print(server.list_marts())
-
 
 #list the datasets from the server
 mart = server['ENSEMBL_MART_ENSEMBL']
@@ -31,7 +32,7 @@ table_2 = pd.DataFrame(dataset.list_attributes())
 table_2.to_csv('table_2.csv', index=False, header=True)
 
 #print filters
-print(dataset.list_filters())
+#print(dataset.list_filters())
 
 #generate query results from the chosen attributes and filters
 result = dataset.query(attributes=["ensembl_gene_id",
@@ -53,8 +54,10 @@ ENSEMBL_table = pd.DataFrame(result)
 ENSEMBL_table.to_csv('ENSEMBL_table.csv', index = False)
 
 
+print("Search completed with ENSEMBL database")
 #-----------------------------------------------------------------------------------------------------------------------
 #Access UNIPROT database using RESTful API
+print("Begin searching with UNIPROT database")
 
 #Create lists to store the query data
 ENSEMBL = []
@@ -69,8 +72,8 @@ for id in range(len(gene_identifier)):
 
     if not r.ok:
         r.raise_for_status()
-        sys.exit()
         print("System error, the database cannot be reached")
+        sys.exit()
 
     decoded = r.json()
 
@@ -99,17 +102,46 @@ UNIPROT_table = pd.DataFrame(UNIPROT_data)
 #Create a csv file can be visualised if required
 UNIPROT_table.to_csv('UNIPROT_table.csv', index = False)
 
-
+print("Search completed with UNIPROT database")
 #-----------------------------------------------------------------------------------------------------------------------
+#Access STRING database using RESTful API
+print("Begin searching with STRING database")
 
+#Create lists to store the query data
+protein_a = []
+protein_b = []
+interaction_score = []
 
+server = "https://string-db.org"
+ext = f"/api/json/network?identifiers={'%0d'.join(gene_identifier)}"
+r = requests.get(server + ext, headers={"Accept" : "application/json"})
 
+if not r.ok:
+    r.raise_for_status()
+    print("System error, the database cannot be reached")
+    sys.exit()
 
+decoded = r.json()
 
+# print the whole thing as text
+#print(repr(decoded), "\n")
 
+for i in decoded:
+    #print(i['preferredName_A'], i['preferredName_B'], i['score'])
+    protein_a.append(i['preferredName_A'])
+    protein_b.append(i['preferredName_B'])
+    interaction_score.append(i['score'])
 
+#Join the list and convert into a pandas dataframe
+string_data = {"protein_1" : protein_a,
+               "protein_2" : protein_b,
+               "interaction_score" : interaction_score}
+STRING_table = pd.DataFrame(string_data)
 
+#Create a csv file can be visualised if required
+STRING_table.to_csv("STRING_table.csv", index = False)
 
+print("Search completed with STRING database")
 #-----------------------------------------------------------------------------------------------------------------------
 
 
@@ -126,16 +158,16 @@ print("Successfully connected to mysql database")
 cursor = db.cursor()
 
 #Create the database s2106664 if it not exist and use the database
-#cursor.execute("CREATE DATABASE IF NOT EXISTS s2106664")
-#cursor.execute("USE s2106664")
+cursor.execute("CREATE DATABASE IF NOT EXISTS s2106664")
+cursor.execute("USE s2106664")
 
 #cursor.execute("SELECT * FROM zebra_fish LIMIT 10")
 
 #print(cursor.fetchall())
 
-#cursor.execute("SHOW TABLES")
+cursor.execute("SHOW TABLES")
 
-#rint(cursor.fetchall())
+print(cursor.fetchall())
 
 
 db.close()
