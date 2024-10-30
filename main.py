@@ -13,6 +13,7 @@ gene_identifier = ("ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG000000230
 
 
 #-----------------------------------------------------------------------------------------------------------------------
+
 #Access ENSEMBL database using custom api pybiomart
 print("Begin searching with ENSEMBL database")
 
@@ -55,7 +56,9 @@ ENSEMBL_table.to_csv('ENSEMBL_table.csv', index = False)
 
 
 print("Search completed with ENSEMBL database")
+
 #-----------------------------------------------------------------------------------------------------------------------
+
 #Access UNIPROT database using RESTful API
 print("Begin searching with UNIPROT database")
 
@@ -103,7 +106,9 @@ UNIPROT_table = pd.DataFrame(UNIPROT_data)
 UNIPROT_table.to_csv('UNIPROT_table.csv', index = False)
 
 print("Search completed with UNIPROT database")
+
 #-----------------------------------------------------------------------------------------------------------------------
+
 #Access STRING database using RESTful API
 print("Begin searching with STRING database")
 
@@ -142,8 +147,8 @@ STRING_table = pd.DataFrame(string_data)
 STRING_table.to_csv("STRING_table.csv", index = False)
 
 print("Search completed with STRING database")
-#-----------------------------------------------------------------------------------------------------------------------
 
+#-----------------------------------------------------------------------------------------------------------------------
 
 #connection to mysql database on the server
 db = mysql.connector.connect (
