@@ -34,11 +34,10 @@ result = dataset.query(attributes=["ensembl_gene_id",
                                    "external_gene_name",
                                    "start_position",
                                    "end_position",
-                                   "go_id",
                                    "chromosome_name",
-                                   "definition_1006",
-                                 #  "namespace_1003",
-                                   "description"],
+                                   "go_id",
+                                   "namespace_1003",
+                                   "definition_1006"],
                        filters={'link_ensembl_gene_id': gene_identifier})
 
 #print query
