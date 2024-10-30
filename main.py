@@ -110,6 +110,7 @@ UNIPROT_table.to_csv('UNIPROT_table.csv', index = False)
 
 
 
+#-----------------------------------------------------------------------------------------------------------------------
 
 
 #connection to mysql database on the server
