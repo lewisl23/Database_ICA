@@ -1,10 +1,10 @@
 import requests, sys
 import pandas as pd
 
+#Define variables
 protein_a = []
 protein_b = []
 interaction_score = []
-
 
 gene_identifier = ("ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG00000023055", "ENSMUSG00000075394",
                    "ENSMUSG00000001655", "ENSMUSG00000022485", "ENSMUSG00000001657", "ENSMUSG00000001661",

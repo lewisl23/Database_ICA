@@ -38,11 +38,11 @@ for id in range(len(gene_identifier)):
         time.sleep(0.5)
 
 
-GO_data = {
+UNIPROT_data = {
     'ENSEMBL_id' : ENSEMBL,
     'GO' : GO,
     'Function' : Function
 }
 
-GO_table = pd.DataFrame(GO_data)
-GO_table.to_csv('GO_table.csv', index = False)
+UNIPROT_table = pd.DataFrame(UNIPROT_data)
+UNIPROT_table.to_csv('UNIPROT_table.csv', index = False)
