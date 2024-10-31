@@ -7,9 +7,9 @@ import sys
 import time
 
 #List of gene name for query
-gene_identifier = ("ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG00000023055", "ENSMUSG00000075394",
+gene_identifier = ["ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG00000023055", "ENSMUSG00000075394",
                    "ENSMUSG00000001655", "ENSMUSG00000022485", "ENSMUSG00000001657", "ENSMUSG00000001661",
-                   "ENSMUSG00000076010", "ENSMUSG00000023048")
+                   "ENSMUSG00000076010", "ENSMUSG00000023048"]
 
 
 #-----------------------------------------------------------------------------------------------------------------------
@@ -108,7 +108,7 @@ UNIPROT_table.to_csv('UNIPROT_table.csv', index = False)
 print("Search completed with UNIPROT database")
 
 #-----------------------------------------------------------------------------------------------------------------------
-
+"""
 #Access STRING database using RESTful API
 print("Begin searching with STRING database")
 
@@ -149,6 +149,7 @@ STRING_table.to_csv("STRING_table.csv", index = False)
 print("Search completed with STRING database")
 
 #-----------------------------------------------------------------------------------------------------------------------
+"""
 
 #connection to mysql database on the server
 db = mysql.connector.connect (
@@ -166,14 +167,50 @@ cursor = db.cursor()
 cursor.execute("CREATE DATABASE IF NOT EXISTS s2106664")
 cursor.execute("USE s2106664")
 
-#cursor.execute("SELECT * FROM zebra_fish LIMIT 10")
+#Create ENSEMBL table in mysql
 
+cursor.execute("CREATE TABLE IF NOT EXISTS ENSEMBL (ENSEMBL_id VARCHAR(25), Gene_type VARCHAR(25), Gene_name VARCHAR(25),"
+               "Gene_start_bp INT, Gene_end_bp INT, Chromosome INT, GO_term VARCHAR(25), GO_domain VARCHAR(25),"
+               "GO_definition VARCHAR(1000))")
+
+
+ENSEMBL_list = ENSEMBL_table.where(pd.notnull(ENSEMBL_table), None).values.tolist()
+
+#Load the data into mysql using a for loop to iterate through the nested lists
+insert_value = (
+    "INSERT INTO ENSEMBL(ENSEMBL_id, Gene_type, Gene_name, Gene_start_bp, Gene_end_bp,"
+    "Chromosome, GO_term, GO_domain, GO_definition)"
+    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+)
+
+for ENSEMBL_value in ENSEMBL_list:
+    cursor.execute(insert_value, ENSEMBL_value)
+
+
+db.commit()
+
+cursor.execute("DROP TABLE IF EXISTS UNIPROT")
+
+cursor.execute("CREATE TABLE IF NOT EXISTS UNIPROT (ENSEMBL_id VARCHAR(25), Protein_name VARCHAR(100),"
+               "Protein_function VARCHAR(1500))")
+insert_value = (
+    "INSERT INTO UNIPROT(ENSEMBL_id, Protein_name, Protein_function)"
+    "VALUES (%s,%s,%s)"
+)
+
+UNIPROT_list = UNIPROT_table.where(pd.notnull(UNIPROT_table), None).values.tolist()
+
+for UNIPROT_value in UNIPROT_list:
+    cursor.execute(insert_value, UNIPROT_value)
+
+db.commit()
+
+#cursor.execute("SELECT * FROM zebra_fish LIMIT 10")
 #print(cursor.fetchall())
 
-cursor.execute("SHOW TABLES")
+#cursor.execute("SHOW TABLES")
 
-print(cursor.fetchall())
-
+#print(cursor.fetchall())
 
 db.close()
 print("Disconnected from mysql database")
