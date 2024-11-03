@@ -11,7 +11,6 @@ gene_identifier = ["ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG000000230
                    "ENSMUSG00000001655", "ENSMUSG00000022485", "ENSMUSG00000001657", "ENSMUSG00000001661",
                    "ENSMUSG00000076010", "ENSMUSG00000023048"]
 
-
 #-----------------------------------------------------------------------------------------------------------------------
 
 #Access ENSEMBL database using custom api pybiomart
@@ -29,8 +28,8 @@ dataset = Dataset(name='mmusculus_gene_ensembl',host='http://www.ensembl.org')
 
 #print attributes
 #print(dataset.list_attributes())
-ENSEMBL_attributes = pd.DataFrame(dataset.list_attributes())
-ENSEMBL_attributes.to_csv('ENSEMBL_attributes.csv', index=False, header=True)
+#ENSEMBL_attributes = pd.DataFrame(dataset.list_attributes())
+#ENSEMBL_attributes.to_csv('ENSEMBL_attributes.csv', index=False, header=True)
 
 #print filters
 #print(dataset.list_filters())
@@ -53,7 +52,6 @@ ENSEMBL_table = pd.DataFrame(result)
 
 #Create a csv file can be visualised if required
 ENSEMBL_table.to_csv('ENSEMBL_table.csv', index = False)
-
 
 print("Search completed with ENSEMBL database")
 
@@ -108,7 +106,7 @@ UNIPROT_table.to_csv('UNIPROT_table.csv', index = False)
 print("Search completed with UNIPROT database")
 
 #-----------------------------------------------------------------------------------------------------------------------
-"""
+
 #Access STRING database using RESTful API
 print("Begin searching with STRING database")
 
@@ -149,7 +147,6 @@ STRING_table.to_csv("STRING_table.csv", index = False)
 print("Search completed with STRING database")
 
 #-----------------------------------------------------------------------------------------------------------------------
-"""
 
 #connection to mysql database on the server
 db = mysql.connector.connect (
@@ -158,25 +155,22 @@ db = mysql.connector.connect (
 	user = "s2106664",
 	password = "82kPR7XM"
 )
-
 print("Successfully connected to mysql database")
 
 cursor = db.cursor()
 
-#Create the database s2106664 if it not exist and use the database
+#Create the database s2106664 if not existed and use the database
 cursor.execute("CREATE DATABASE IF NOT EXISTS s2106664")
 cursor.execute("USE s2106664")
 
-#Create ENSEMBL table in mysql
 
+#Create the ENSEMBL table in mysql and load the ENSEMBL data into it
 cursor.execute("CREATE TABLE IF NOT EXISTS ENSEMBL (ENSEMBL_id VARCHAR(25), Gene_type VARCHAR(25), Gene_name VARCHAR(25),"
                "Gene_start_bp INT, Gene_end_bp INT, Chromosome INT, GO_term VARCHAR(25), GO_domain VARCHAR(25),"
                "GO_definition VARCHAR(1000))")
 
-
 ENSEMBL_list = ENSEMBL_table.where(pd.notnull(ENSEMBL_table), None).values.tolist()
 
-#Load the data into mysql using a for loop to iterate through the nested lists
 insert_value = (
     "INSERT INTO ENSEMBL(ENSEMBL_id, Gene_type, Gene_name, Gene_start_bp, Gene_end_bp,"
     "Chromosome, GO_term, GO_domain, GO_definition)"
@@ -186,11 +180,7 @@ insert_value = (
 for ENSEMBL_value in ENSEMBL_list:
     cursor.execute(insert_value, ENSEMBL_value)
 
-
-db.commit()
-
-cursor.execute("DROP TABLE IF EXISTS UNIPROT")
-
+#Create the UNIPROT table in mysql and load the UNIPROT data into it
 cursor.execute("CREATE TABLE IF NOT EXISTS UNIPROT (ENSEMBL_id VARCHAR(25), Protein_name VARCHAR(100),"
                "Protein_function VARCHAR(1500))")
 insert_value = (
@@ -203,14 +193,24 @@ UNIPROT_list = UNIPROT_table.where(pd.notnull(UNIPROT_table), None).values.tolis
 for UNIPROT_value in UNIPROT_list:
     cursor.execute(insert_value, UNIPROT_value)
 
+
+
+#Create the STRING table in mysql and load the STRING data into it
+cursor.execute("CREATE TABLE IF NOT EXISTS STRING (Protein_1 VARCHAR(25), Protein_2 VARCHAR(125),"
+               "Interaction_score DECIMAL(5,3))")
+
+STRING_list = STRING_table.where(pd.notnull(STRING_table), None).values.tolist()
+
+insert_value = (
+    "INSERT INTO STRING(Protein_1, Protein_2, Interaction_score)"
+    "VALUES (%s,%s,%s)"
+)
+
+for STRING_value in STRING_list:
+    cursor.execute(insert_value, STRING_value)
+
+
 db.commit()
-
-#cursor.execute("SELECT * FROM zebra_fish LIMIT 10")
-#print(cursor.fetchall())
-
-#cursor.execute("SHOW TABLES")
-
-#print(cursor.fetchall())
 
 db.close()
 print("Disconnected from mysql database")
