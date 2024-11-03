@@ -40,10 +40,10 @@ result = dataset.query(attributes=["ensembl_gene_id",
                                    "external_gene_name",
                                    "start_position",
                                    "end_position",
-                                   "chromosome_name",
-                                   "go_id",
-                                   "namespace_1003",
-                                   "definition_1006"],
+                                   "chromosome_name"],
+                                   #"go_id",
+                                   #"namespace_1003",
+                                   #"definition_1006"],
                        filters={'link_ensembl_gene_id': gene_identifier})
 
 #print query and save in as a pandas dataframe
@@ -163,26 +163,27 @@ cursor = db.cursor()
 cursor.execute("CREATE DATABASE IF NOT EXISTS s2106664")
 cursor.execute("USE s2106664")
 
+cursor.execute("DROP TABLE IF EXISTS ENSEMBL")
 
 #Create the ENSEMBL table in mysql and load the ENSEMBL data into it
 cursor.execute("CREATE TABLE IF NOT EXISTS ENSEMBL (ENSEMBL_id VARCHAR(25), Gene_type VARCHAR(25), Gene_name VARCHAR(25),"
-               "Gene_start_bp INT, Gene_end_bp INT, Chromosome INT, GO_term VARCHAR(25), GO_domain VARCHAR(25),"
-               "GO_definition VARCHAR(1000))")
+               "Gene_start_bp INT, Gene_end_bp INT, Chromosome INT, PRIMARY KEY (ENSEMBL_id))")
 
 ENSEMBL_list = ENSEMBL_table.where(pd.notnull(ENSEMBL_table), None).values.tolist()
 
 insert_value = (
-    "INSERT INTO ENSEMBL(ENSEMBL_id, Gene_type, Gene_name, Gene_start_bp, Gene_end_bp,"
-    "Chromosome, GO_term, GO_domain, GO_definition)"
-    "VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+    "INSERT INTO ENSEMBL(ENSEMBL_id, Gene_type, Gene_name, Gene_start_bp, Gene_end_bp, Chromosome)"
+    "VALUES (%s,%s,%s,%s,%s,%s)"
 )
 
 for ENSEMBL_value in ENSEMBL_list:
     cursor.execute(insert_value, ENSEMBL_value)
 
+
+cursor.execute("DROP TABLE IF EXISTS UNIPROT")
 #Create the UNIPROT table in mysql and load the UNIPROT data into it
 cursor.execute("CREATE TABLE IF NOT EXISTS UNIPROT (ENSEMBL_id VARCHAR(25), Protein_name VARCHAR(100),"
-               "Protein_function VARCHAR(1500))")
+               "Protein_function VARCHAR(1500), PRIMARY KEY (ENSEMBL_id))")
 insert_value = (
     "INSERT INTO UNIPROT(ENSEMBL_id, Protein_name, Protein_function)"
     "VALUES (%s,%s,%s)"
@@ -194,7 +195,7 @@ for UNIPROT_value in UNIPROT_list:
     cursor.execute(insert_value, UNIPROT_value)
 
 
-
+cursor.execute("DROP TABLE IF EXISTS STRING")
 #Create the STRING table in mysql and load the STRING data into it
 cursor.execute("CREATE TABLE IF NOT EXISTS STRING (Protein_1 VARCHAR(25), Protein_2 VARCHAR(125),"
                "Interaction_score DECIMAL(5,3))")
@@ -212,6 +213,22 @@ for STRING_value in STRING_list:
 
 db.commit()
 
+#Query the summary tabld from the 3 tables
+#cursor.execute("SELECT * FROM ENSEMBL JOIN UNIPROT ON ENSEMBL.ENSEMBL_id=UNIPROT.ENSEMBL_id")
+cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function, STRING.* "
+               "FROM ENSEMBL "
+               "LEFT JOIN UNIPROT ON ENSEMBL.ENSEMBL_id=UNIPROT.ENSEMBL_id "
+               "LEFT JOIN STRING ON ENSEMBL.Gene_name=STRING.Protein_1 OR ENSEMBL.Gene_name=STRING.Protein_2")
+
+
+
+
+integrated_table = cursor.fetchall()
+columns = [desc[0] for desc in cursor.description]
 db.close()
 print("Disconnected from mysql database")
+
+integrated_table = pd.DataFrame(integrated_table, columns=columns)
+integrated_table.to_csv('integrated_table.csv', index = False)
+
 
