@@ -262,12 +262,11 @@ db.commit()
 
 #Query the summary tabld from the 3 tables
 #cursor.execute("SELECT * FROM ENSEMBL JOIN UNIPROT ON ENSEMBL.ENSEMBL_id=UNIPROT.ENSEMBL_id")
-cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function, STRING.*, GO.GO_term, GO.GO_domain, "
-               "GO.GO_description "
+cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function, STRING.*, GO.* "
                "FROM ENSEMBL "
                "LEFT JOIN UNIPROT ON ENSEMBL.ENSEMBL_id=UNIPROT.ENSEMBL_id "
                "LEFT JOIN STRING ON ENSEMBL.Gene_name=STRING.Protein_1 OR ENSEMBL.Gene_name=STRING.Protein_2 "
-               "LEFT JOIN GO ON ENSEMBL.Gene_name=GO.ENSEMBL_id")
+               "LEFT JOIN GO ON ENSEMBL.ENSEMBL_id=GO.ENSEMBL_id")
 
 
 
