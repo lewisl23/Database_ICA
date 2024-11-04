@@ -33,6 +33,7 @@ dataset = Dataset(name='mmusculus_gene_ensembl',host='http://www.ensembl.org')
 
 #print filters
 #print(dataset.list_filters())
+#dataset.list_filters().to_csv('ENSEMBL_filter.csv', index=False, header=True)
 
 #generate query results from the chosen attributes and filters
 result = dataset.query(attributes=["ensembl_gene_id",
@@ -54,6 +55,35 @@ ENSEMBL_table = pd.DataFrame(result)
 ENSEMBL_table.to_csv('ENSEMBL_table.csv', index = False)
 
 print("Search completed with ENSEMBL database")
+
+#-----------------------------------------------
+
+
+
+GO_result = dataset.query(attributes=["ensembl_gene_id",
+                                   "go_id",
+                                   "namespace_1003",
+                                   "definition_1006"],
+                          filters={'link_ensembl_gene_id': gene_identifier})
+
+#print query and save in as a pandas dataframe
+#print(result)
+GO_table = GO_result.dropna()
+
+print(GO_table)
+
+#Create a csv file can be visualised if required
+GO_table.to_csv('GO_table.csv', index = False)
+
+def concatenate(series):
+    return ', '.join(map(str, series))
+
+grouped_GO_table = GO_table.groupby('Gene stable ID').agg({
+    'GO term accession': concatenate,
+    'GO domain': concatenate,
+    'GO term definition': concatenate}).reset_index()
+
+grouped_GO_table.to_csv('Grouped_GO_table.csv', index = False)
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -148,6 +178,7 @@ print("Search completed with STRING database")
 
 #-----------------------------------------------------------------------------------------------------------------------
 
+
 #connection to mysql database on the server
 db = mysql.connector.connect (
 	host = "localhost",
@@ -210,25 +241,43 @@ insert_value = (
 for STRING_value in STRING_list:
     cursor.execute(insert_value, STRING_value)
 
+#---------------------- NEW STUFF -------------------------
+
+cursor.execute("DROP TABLE IF EXISTS GO")
+#Create the ENSEMBL table in mysql and load the ENSEMBL data into it
+cursor.execute("CREATE TABLE IF NOT EXISTS GO (ENSEMBL_id VARCHAR(25), GO_term VARCHAR(1000), GO_domain VARCHAR(1000),"
+               "GO_description VARCHAR(10000))")
+
+GO_list = grouped_GO_table.where(pd.notnull(grouped_GO_table), None).values.tolist()
+
+insert_value = (
+    "INSERT INTO GO(ENSEMBL_id, GO_term, GO_domain, GO_description)"
+    "VALUES (%s,%s,%s,%s)"
+)
+
+for GO_value in GO_list:
+    cursor.execute(insert_value, GO_value)
 
 db.commit()
 
 #Query the summary tabld from the 3 tables
 #cursor.execute("SELECT * FROM ENSEMBL JOIN UNIPROT ON ENSEMBL.ENSEMBL_id=UNIPROT.ENSEMBL_id")
-cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function, STRING.* "
+cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function, STRING.*, GO.GO_term, GO.GO_domain, "
+               "GO.GO_description "
                "FROM ENSEMBL "
                "LEFT JOIN UNIPROT ON ENSEMBL.ENSEMBL_id=UNIPROT.ENSEMBL_id "
-               "LEFT JOIN STRING ON ENSEMBL.Gene_name=STRING.Protein_1 OR ENSEMBL.Gene_name=STRING.Protein_2")
+               "LEFT JOIN STRING ON ENSEMBL.Gene_name=STRING.Protein_1 OR ENSEMBL.Gene_name=STRING.Protein_2 "
+               "LEFT JOIN GO ON ENSEMBL.Gene_name=GO.ENSEMBL_id")
 
 
 
 
 integrated_table = cursor.fetchall()
 columns = [desc[0] for desc in cursor.description]
+
 db.close()
 print("Disconnected from mysql database")
 
 integrated_table = pd.DataFrame(integrated_table, columns=columns)
 integrated_table.to_csv('integrated_table.csv', index = False)
-
 
