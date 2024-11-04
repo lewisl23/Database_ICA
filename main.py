@@ -56,9 +56,7 @@ ENSEMBL_table.to_csv('ENSEMBL_table.csv', index = False)
 
 print("Search completed with ENSEMBL database")
 
-#-----------------------------------------------
-
-
+#-----------------------------------------------------------------------------------------------------------------------
 
 GO_result = dataset.query(attributes=["ensembl_gene_id",
                                    "go_id",
