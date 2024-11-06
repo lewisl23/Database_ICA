@@ -11,9 +11,8 @@ gene_identifier = ["ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG000000230
                    "ENSMUSG00000001655", "ENSMUSG00000022485", "ENSMUSG00000001657", "ENSMUSG00000001661",
                    "ENSMUSG00000076010", "ENSMUSG00000023048"]
 
-#-----------------------------------------------------------------------------------------------------------------------
+#--------------------------- --------------ENSEMBL database-------------------------------------------------------------
 
-#Access ENSEMBL database using custom api PyBiomart
 print("Begin searching with ENSEMBL database")
 
 server = Server(host='http://www.ensembl.org')
@@ -50,9 +49,7 @@ ENSEMBL_table = pd.DataFrame(result)
 #Create a csv file can be visualised if required
 ENSEMBL_table.to_csv('ENSEMBL_table.csv', index = False)
 
-print("Search completed with ENSEMBL database")
-
-#-----------------------------------------------------------------------------------------------------------------------
+#---------------------------------------ENSEMBL database for GO----------------------------------------------------------------
 
 GO_result = dataset.query(attributes=["ensembl_gene_id",
                                    "go_id",
@@ -61,27 +58,25 @@ GO_result = dataset.query(attributes=["ensembl_gene_id",
                           filters={'link_ensembl_gene_id': gene_identifier})
 
 #print query and save in as a pandas dataframe
-#print(result)
 GO_table = GO_result.dropna()
-
-print(GO_table)
 
 #Create a csv file can be visualised if required
 GO_table.to_csv('GO_table.csv', index = False)
 
-def concatenate(series):
+def join(series):
     return ', '.join(map(str, series))
 
 grouped_GO_table = GO_table.groupby('Gene stable ID').agg({
-    'GO term accession': concatenate,
-    'GO domain': concatenate,
-    'GO term definition': concatenate}).reset_index()
+    'GO term accession': join,
+    'GO domain': join,
+    'GO term definition': join}).reset_index()
 
 grouped_GO_table.to_csv('Grouped_GO_table.csv', index = False)
 
-#-----------------------------------------------------------------------------------------------------------------------
+print("Search completed with ENSEMBL database")
 
-#Access UNIPROT database using RESTful API
+#----------------------------------------UniProt database---------------------------------------------------------------
+
 print("Begin searching with UNIPROT database")
 
 #Create lists to store the query data
@@ -90,14 +85,14 @@ Protein_Name = []
 Function = []
 
 for id in range(len(gene_identifier)):
-    print(f"Searching for {gene_identifier[id]} using UNIPROT database")
+    #print(f"Searching for {gene_identifier[id]} using UNIPROT database")
     server = "https://rest.uniprot.org"
     ext = f"/uniprotkb/search?query={gene_identifier[id]}+AND+reviewed:true&fields=protein_name,cc_function"
     r = requests.get(server + ext, headers={"Accept" : "application/json"})
 
     if not r.ok:
         r.raise_for_status()
-        print("System error, the database cannot be reached")
+        print("Connection error, the UniProt database cannot be reached.")
         sys.exit()
 
     decoded = r.json()
@@ -106,15 +101,15 @@ for id in range(len(gene_identifier)):
     #print(repr(decoded), "\n")
 
     if decoded['results'] == []:
-        print(f"The given gene identifier {gene_identifier[id]} cannot be accessed through the UNIPROT database")
+        print(f"The given gene identifier {gene_identifier[id]} cannot be accessed through the UniProt database")
         continue
     else:
         ENSEMBL.append(gene_identifier[id])
         Protein_Name.append(decoded['results'][0]['proteinDescription']['recommendedName']['fullName']['value'])
         Function.append(decoded['results'][0]['comments'][0]['texts'][0]['value'])
-        print("Search completed")
+        #print("Search completed")
 
-    time.sleep(0.1)
+    time.sleep(1)
 
 #Join the list and convert into a pandas dataframe
 UNIPROT_data = {
@@ -129,9 +124,8 @@ UNIPROT_table.to_csv('UNIPROT_table.csv', index = False)
 
 print("Search completed with UNIPROT database")
 
-#-----------------------------------------------------------------------------------------------------------------------
+#--------------------------------------------STRING database------------------------------------------------------------
 
-#Access STRING database using RESTful API
 print("Begin searching with STRING database")
 
 #Create lists to store the query data
@@ -145,7 +139,7 @@ r = requests.get(server + ext, headers={"Accept" : "application/json"})
 
 if not r.ok:
     r.raise_for_status()
-    print("System error, the database cannot be reached")
+    print("Connection error, the STRING database cannot be reached.")
     sys.exit()
 
 decoded = r.json()
@@ -170,8 +164,7 @@ STRING_table.to_csv("STRING_table.csv", index = False)
 
 print("Search completed with STRING database")
 
-#-----------------------------------------------------------------------------------------------------------------------
-
+#------------------------------------------MySQL database---------------------------------------------------------------
 
 #connection to mysql database on the server
 db = mysql.connector.connect (
@@ -180,6 +173,7 @@ db = mysql.connector.connect (
 	user = "s2106664",
 	password = "82kPR7XM"
 )
+
 print("Successfully connected to mysql database")
 
 cursor = db.cursor()
@@ -195,7 +189,7 @@ cursor.execute("CREATE TABLE IF NOT EXISTS ENSEMBL (ENSEMBL_id VARCHAR(25), Gene
                "Gene_start_bp INT, Gene_end_bp INT, Chromosome INT, PRIMARY KEY (ENSEMBL_id))")
 
 ENSEMBL_list = ENSEMBL_table.where(pd.notnull(ENSEMBL_table), None).values.tolist()
-print(ENSEMBL_list)
+#print(ENSEMBL_list)
 
 
 insert_value = (
@@ -256,7 +250,9 @@ for GO_value in GO_list:
 
 db.commit()
 
-#Query the summary table from the 3 tables
+#------------------------------------------MySQL query---------------------------------------------------------------
+
+#Query the summary table from the 4 tables
 cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function, GO.GO_term, GO.GO_domain, "
                "GO.GO_description, STRING.* "
                "FROM ENSEMBL "
@@ -265,14 +261,11 @@ cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function
                "LEFT JOIN STRING ON ENSEMBL.Gene_name=STRING.Protein_1 OR ENSEMBL.Gene_name=STRING.Protein_2 ")
 
 
-
-
 integrated_table = cursor.fetchall()
 columns = [desc[0] for desc in cursor.description]
 
 db.close()
 print("Disconnected from mysql database")
-
 
 integrated_table = pd.DataFrame(integrated_table, columns=columns)
 print(integrated_table)
