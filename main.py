@@ -13,7 +13,7 @@ gene_identifier = ["ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG000000230
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-#Access ENSEMBL database using custom api pybiomart
+#Access ENSEMBL database using custom api PyBiomart
 print("Begin searching with ENSEMBL database")
 
 server = Server(host='http://www.ensembl.org')
@@ -26,14 +26,13 @@ mart.list_datasets()
 #grab the required dataset
 dataset = Dataset(name='mmusculus_gene_ensembl',host='http://www.ensembl.org')
 
-#print attributes
+#print attributes and filters
 #print(dataset.list_attributes())
-#ENSEMBL_attributes = pd.DataFrame(dataset.list_attributes())
-#ENSEMBL_attributes.to_csv('ENSEMBL_attributes.csv', index=False, header=True)
+ENSEMBL_attributes = pd.DataFrame(dataset.list_attributes())
+ENSEMBL_attributes.to_csv('ENSEMBL_attributes.csv', index=False, header=True)
 
-#print filters
 #print(dataset.list_filters())
-#dataset.list_filters().to_csv('ENSEMBL_filter.csv', index=False, header=True)
+dataset.list_filters().to_csv('ENSEMBL_filter.csv', index=False, header=True)
 
 #generate query results from the chosen attributes and filters
 result = dataset.query(attributes=["ensembl_gene_id",
@@ -42,9 +41,6 @@ result = dataset.query(attributes=["ensembl_gene_id",
                                    "start_position",
                                    "end_position",
                                    "chromosome_name"],
-                                   #"go_id",
-                                   #"namespace_1003",
-                                   #"definition_1006"],
                        filters={'link_ensembl_gene_id': gene_identifier})
 
 #print query and save in as a pandas dataframe
@@ -199,6 +195,8 @@ cursor.execute("CREATE TABLE IF NOT EXISTS ENSEMBL (ENSEMBL_id VARCHAR(25), Gene
                "Gene_start_bp INT, Gene_end_bp INT, Chromosome INT, PRIMARY KEY (ENSEMBL_id))")
 
 ENSEMBL_list = ENSEMBL_table.where(pd.notnull(ENSEMBL_table), None).values.tolist()
+print(ENSEMBL_list)
+
 
 insert_value = (
     "INSERT INTO ENSEMBL(ENSEMBL_id, Gene_type, Gene_name, Gene_start_bp, Gene_end_bp, Chromosome)"
@@ -239,7 +237,7 @@ insert_value = (
 for STRING_value in STRING_list:
     cursor.execute(insert_value, STRING_value)
 
-#---------------------- NEW STUFF -------------------------
+
 
 cursor.execute("DROP TABLE IF EXISTS GO")
 #Create the ENSEMBL table in mysql and load the ENSEMBL data into it
@@ -258,13 +256,13 @@ for GO_value in GO_list:
 
 db.commit()
 
-#Query the summary tabld from the 3 tables
-#cursor.execute("SELECT * FROM ENSEMBL JOIN UNIPROT ON ENSEMBL.ENSEMBL_id=UNIPROT.ENSEMBL_id")
-cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function, STRING.*, GO.* "
+#Query the summary table from the 3 tables
+cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function, GO.GO_term, GO.GO_domain, "
+               "GO.GO_description, STRING.* "
                "FROM ENSEMBL "
                "LEFT JOIN UNIPROT ON ENSEMBL.ENSEMBL_id=UNIPROT.ENSEMBL_id "
-               "LEFT JOIN STRING ON ENSEMBL.Gene_name=STRING.Protein_1 OR ENSEMBL.Gene_name=STRING.Protein_2 "
-               "LEFT JOIN GO ON ENSEMBL.ENSEMBL_id=GO.ENSEMBL_id")
+               "LEFT JOIN GO ON ENSEMBL.ENSEMBL_id=GO.ENSEMBL_id "
+               "LEFT JOIN STRING ON ENSEMBL.Gene_name=STRING.Protein_1 OR ENSEMBL.Gene_name=STRING.Protein_2 ")
 
 
 
@@ -275,6 +273,9 @@ columns = [desc[0] for desc in cursor.description]
 db.close()
 print("Disconnected from mysql database")
 
+
 integrated_table = pd.DataFrame(integrated_table, columns=columns)
+print(integrated_table)
+
 integrated_table.to_csv('integrated_table.csv', index = False)
 
