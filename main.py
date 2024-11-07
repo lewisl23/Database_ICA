@@ -1,39 +1,39 @@
 import pandas as pd
-import mysql.connector
 from pybiomart import Dataset
 from pybiomart import Server
 import requests
 import sys
 import time
+import mysql.connector
 
 #List of gene name for query
 gene_identifier = ["ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG00000023055", "ENSMUSG00000075394",
                    "ENSMUSG00000001655", "ENSMUSG00000022485", "ENSMUSG00000001657", "ENSMUSG00000001661",
                    "ENSMUSG00000076010", "ENSMUSG00000023048"]
 
-#--------------------------- --------------ENSEMBL database-------------------------------------------------------------
+#------------------------------------------ENSEMBL database-------------------------------------------------------------
 
 print("Begin searching with ENSEMBL database")
 
 server = Server(host='http://www.ensembl.org')
 #print(server.list_marts())
 
-#list the datasets from the server
+#List the datasets from the server
 mart = server['ENSEMBL_MART_ENSEMBL']
 mart.list_datasets()
 
-#grab the required dataset
+#Grab the required dataset
 dataset = Dataset(name='mmusculus_gene_ensembl',host='http://www.ensembl.org')
 
-#print attributes and filters
+#Print attributes and filters then convert them into CSV for better visualisation
 #print(dataset.list_attributes())
-ENSEMBL_attributes = pd.DataFrame(dataset.list_attributes())
-ENSEMBL_attributes.to_csv('ENSEMBL_attributes.csv', index=False, header=True)
-
 #print(dataset.list_filters())
-dataset.list_filters().to_csv('ENSEMBL_filter.csv', index=False, header=True)
 
-#generate query results from the chosen attributes and filters
+#ENSEMBL_attributes = pd.DataFrame(dataset.list_attributes())
+#ENSEMBL_attributes.to_csv('ENSEMBL_attributes.csv', index=False, header=True)
+#dataset.list_filters().to_csv('ENSEMBL_filter.csv', index=False, header=True)
+
+#Generate query results from the chosen attributes and filters
 result = dataset.query(attributes=["ensembl_gene_id",
                                    "gene_biotype",
                                    "external_gene_name",
@@ -42,14 +42,14 @@ result = dataset.query(attributes=["ensembl_gene_id",
                                    "chromosome_name"],
                        filters={'link_ensembl_gene_id': gene_identifier})
 
-#print query and save in as a pandas dataframe
+#Print query and save in as a pandas dataframe
 #print(result)
 ENSEMBL_table = pd.DataFrame(result)
 
-#Create a csv file can be visualised if required
-ENSEMBL_table.to_csv('ENSEMBL_table.csv', index = False)
+#Create a csv file to visualise if required
+#ENSEMBL_table.to_csv('ENSEMBL_table.csv', index = False)
 
-#---------------------------------------ENSEMBL database for GO----------------------------------------------------------------
+#---------------------------------------ENSEMBL database for GO---------------------------------------------------------
 
 GO_result = dataset.query(attributes=["ensembl_gene_id",
                                    "go_id",
@@ -57,21 +57,22 @@ GO_result = dataset.query(attributes=["ensembl_gene_id",
                                    "definition_1006"],
                           filters={'link_ensembl_gene_id': gene_identifier})
 
-#print query and save in as a pandas dataframe
+#Print query and save in as a pandas dataframe
 GO_table = GO_result.dropna()
 
 #Create a csv file can be visualised if required
-GO_table.to_csv('GO_table.csv', index = False)
+#GO_table.to_csv('GO_table.csv', index = False)
 
-def join(series):
-    return ', '.join(map(str, series))
+#Transform the GO table by grouping the ENSEMBL ID and joining the corresponding data
+def join(data):
+    return ', '.join(map(str, data))
 
 grouped_GO_table = GO_table.groupby('Gene stable ID').agg({
     'GO term accession': join,
     'GO domain': join,
     'GO term definition': join}).reset_index()
 
-grouped_GO_table.to_csv('Grouped_GO_table.csv', index = False)
+#grouped_GO_table.to_csv('Grouped_GO_table.csv', index = False)
 
 print("Search completed with ENSEMBL database")
 
@@ -97,7 +98,7 @@ for id in range(len(gene_identifier)):
 
     decoded = r.json()
 
-    # print the whole thing as text to understand the data structure
+    #Print the JSON result to understand the data structure
     #print(repr(decoded), "\n")
 
     if decoded['results'] == []:
@@ -120,7 +121,7 @@ UNIPROT_data = {
 UNIPROT_table = pd.DataFrame(UNIPROT_data)
 
 #Create a csv file can be visualised if required
-UNIPROT_table.to_csv('UNIPROT_table.csv', index = False)
+#UNIPROT_table.to_csv('UNIPROT_table.csv', index = False)
 
 print("Search completed with UNIPROT database")
 
@@ -144,7 +145,7 @@ if not r.ok:
 
 decoded = r.json()
 
-# print the whole thing as text
+#Print the JSON formatted result to understand data structure
 #print(repr(decoded), "\n")
 
 for i in decoded:
@@ -153,14 +154,14 @@ for i in decoded:
     protein_b.append(i['preferredName_B'])
     interaction_score.append(i['score'])
 
-#Join the list and convert into a pandas dataframe
+
 string_data = {"protein_1" : protein_a,
                "protein_2" : protein_b,
                "interaction_score" : interaction_score}
 STRING_table = pd.DataFrame(string_data)
 
 #Create a csv file can be visualised if required
-STRING_table.to_csv("STRING_table.csv", index = False)
+#STRING_table.to_csv("STRING_table.csv", index = False)
 
 print("Search completed with STRING database")
 
@@ -182,15 +183,19 @@ cursor = db.cursor()
 cursor.execute("CREATE DATABASE IF NOT EXISTS s2106664")
 cursor.execute("USE s2106664")
 
+"""
+#Needed for testing in order to not make duplicate entry due to the PRIMARY KEY characteristics of ENSEMBL ID
 cursor.execute("DROP TABLE IF EXISTS ENSEMBL")
+cursor.execute("DROP TABLE IF EXISTS GO")
+cursor.execute("DROP TABLE IF EXISTS STRING")
+cursor.execute("DROP TABLE IF EXISTS UNIPROT")
+"""
 
 #Create the ENSEMBL table in mysql and load the ENSEMBL data into it
 cursor.execute("CREATE TABLE IF NOT EXISTS ENSEMBL (ENSEMBL_id VARCHAR(25), Gene_type VARCHAR(25), Gene_name VARCHAR(25),"
                "Gene_start_bp INT, Gene_end_bp INT, Chromosome INT, PRIMARY KEY (ENSEMBL_id))")
 
 ENSEMBL_list = ENSEMBL_table.where(pd.notnull(ENSEMBL_table), None).values.tolist()
-#print(ENSEMBL_list)
-
 
 insert_value = (
     "INSERT INTO ENSEMBL(ENSEMBL_id, Gene_type, Gene_name, Gene_start_bp, Gene_end_bp, Chromosome)"
@@ -201,7 +206,6 @@ for ENSEMBL_value in ENSEMBL_list:
     cursor.execute(insert_value, ENSEMBL_value)
 
 
-cursor.execute("DROP TABLE IF EXISTS UNIPROT")
 #Create the UNIPROT table in mysql and load the UNIPROT data into it
 cursor.execute("CREATE TABLE IF NOT EXISTS UNIPROT (ENSEMBL_id VARCHAR(25), Protein_name VARCHAR(100),"
                "Protein_function VARCHAR(1500), PRIMARY KEY (ENSEMBL_id))")
@@ -216,7 +220,6 @@ for UNIPROT_value in UNIPROT_list:
     cursor.execute(insert_value, UNIPROT_value)
 
 
-cursor.execute("DROP TABLE IF EXISTS STRING")
 #Create the STRING table in mysql and load the STRING data into it
 cursor.execute("CREATE TABLE IF NOT EXISTS STRING (Protein_1 VARCHAR(25), Protein_2 VARCHAR(125),"
                "Interaction_score DECIMAL(5,3))")
@@ -232,11 +235,9 @@ for STRING_value in STRING_list:
     cursor.execute(insert_value, STRING_value)
 
 
-
-cursor.execute("DROP TABLE IF EXISTS GO")
-#Create the ENSEMBL table in mysql and load the ENSEMBL data into it
+#Create the GO table in mysql and load the GO data into it
 cursor.execute("CREATE TABLE IF NOT EXISTS GO (ENSEMBL_id VARCHAR(25), GO_term VARCHAR(1000), GO_domain VARCHAR(1000),"
-               "GO_description VARCHAR(10000))")
+               "GO_description VARCHAR(10000), PRIMARY KEY (ENSEMBL_id))")
 
 GO_list = grouped_GO_table.where(pd.notnull(grouped_GO_table), None).values.tolist()
 
@@ -250,9 +251,9 @@ for GO_value in GO_list:
 
 db.commit()
 
-#------------------------------------------MySQL query---------------------------------------------------------------
+#------------------------------------------MySQL query------------------------------------------------------------------
 
-#Query the summary table from the 4 tables
+#Query the summary table from the 4 tables using LEFT JOIN
 cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function, GO.GO_term, GO.GO_domain, "
                "GO.GO_description, STRING.* "
                "FROM ENSEMBL "
@@ -260,15 +261,13 @@ cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function
                "LEFT JOIN GO ON ENSEMBL.ENSEMBL_id=GO.ENSEMBL_id "
                "LEFT JOIN STRING ON ENSEMBL.Gene_name=STRING.Protein_1 OR ENSEMBL.Gene_name=STRING.Protein_2 ")
 
-
+#Fetch the table information and column name from MySQL then create a pandas dataframe
 integrated_table = cursor.fetchall()
 columns = [desc[0] for desc in cursor.description]
+integrated_table = pd.DataFrame(integrated_table, columns=columns)
+
+print(integrated_table)
+#integrated_table.to_csv('integrated_table.csv', index = False)
 
 db.close()
 print("Disconnected from mysql database")
-
-integrated_table = pd.DataFrame(integrated_table, columns=columns)
-print(integrated_table)
-
-integrated_table.to_csv('integrated_table.csv', index = False)
-
