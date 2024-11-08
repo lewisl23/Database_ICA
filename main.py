@@ -12,7 +12,7 @@ gene_identifier = ["ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG000000230
                    "ENSMUSG00000076010", "ENSMUSG00000023048"]
 
 #------------------------------------------ENSEMBL database-------------------------------------------------------------
-
+#Acquired and edited from PGBI111292024-5SS1SEM1 Biological_database biomart.py
 print("Begin searching with ENSEMBL database")
 
 server = Server(host='http://www.ensembl.org')
@@ -77,7 +77,7 @@ grouped_GO_table = GO_table.groupby('Gene stable ID').agg({
 print("Search completed with ENSEMBL database")
 
 #----------------------------------------UniProt database---------------------------------------------------------------
-
+#Acquired and edited from PGBI111292024-5SS1SEM1 Biological_database REST_python_example.py
 print("Begin searching with UNIPROT database")
 
 #Create lists to store the query data
@@ -126,7 +126,7 @@ UNIPROT_table = pd.DataFrame(UNIPROT_data)
 print("Search completed with UNIPROT database")
 
 #--------------------------------------------STRING database------------------------------------------------------------
-
+#Acquired and edited from PGBI111292024-5SS1SEM1 Biological_database REST_python_example.py
 print("Begin searching with STRING database")
 
 #Create lists to store the query data
@@ -183,13 +183,13 @@ cursor = db.cursor()
 cursor.execute("CREATE DATABASE IF NOT EXISTS s2106664")
 cursor.execute("USE s2106664")
 
-"""
+
 #Needed for testing in order to not make duplicate entry due to the PRIMARY KEY characteristics of ENSEMBL ID
 cursor.execute("DROP TABLE IF EXISTS ENSEMBL")
 cursor.execute("DROP TABLE IF EXISTS GO")
 cursor.execute("DROP TABLE IF EXISTS STRING")
 cursor.execute("DROP TABLE IF EXISTS UNIPROT")
-"""
+
 
 #Create the ENSEMBL table in mysql and load the ENSEMBL data into it
 cursor.execute("CREATE TABLE IF NOT EXISTS ENSEMBL (ENSEMBL_id VARCHAR(25), Gene_type VARCHAR(25), Gene_name VARCHAR(25),"
@@ -267,7 +267,7 @@ columns = [desc[0] for desc in cursor.description]
 integrated_table = pd.DataFrame(integrated_table, columns=columns)
 
 print(integrated_table)
-#integrated_table.to_csv('integrated_table.csv', index = False)
+integrated_table.to_csv('integrated_table.csv', index = False)
 
 db.close()
 print("Disconnected from mysql database")
