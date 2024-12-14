@@ -165,6 +165,7 @@ STRING_table = pd.DataFrame(string_data)
 
 print("Search completed with STRING database")
 
+"""
 #------------------------------------------MySQL database---------------------------------------------------------------
 
 #connection to mysql database on the server
@@ -271,3 +272,5 @@ integrated_table.to_csv('integrated_table.csv', index = False)
 
 db.close()
 print("Disconnected from mysql database")
+
+"""
