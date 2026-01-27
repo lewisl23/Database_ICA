@@ -5,6 +5,8 @@ import requests
 import sys
 import time
 import mysql.connector
+from dotenv import load_dotenv
+import os
 
 #List of gene name for query
 gene_identifier = ["ENSMUSG00000036061", "ENSMUSG00000000555", "ENSMUSG00000023055", "ENSMUSG00000075394",
@@ -169,11 +171,13 @@ print("Search completed with STRING database")
 #------------------------------------------MySQL database---------------------------------------------------------------
 
 #connection to mysql database on the server
+
+load_dotenv()
 db = mysql.connector.connect (
-	host = "localhost",
-	port =3306,
-	user = "root",
-	password = "secret"
+	host = os.getenv("DB_HOST"),
+	port = int(os.getenv("DB_PORT")),
+	user = os.getenv("DB_USER"),
+	password = os.getenv("DB_PASSWORD")
 )
 
 print("Successfully connected to mysql database")
