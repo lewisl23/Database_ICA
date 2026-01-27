@@ -165,15 +165,15 @@ STRING_table = pd.DataFrame(string_data)
 
 print("Search completed with STRING database")
 
-"""
+
 #------------------------------------------MySQL database---------------------------------------------------------------
 
 #connection to mysql database on the server
 db = mysql.connector.connect (
 	host = "localhost",
-	port = 9999,
-	user = "s2106664",
-	password = "82kPR7XM"
+	port =3306,
+	user = "root",
+	password = "secret"
 )
 
 print("Successfully connected to mysql database")
@@ -255,12 +255,22 @@ db.commit()
 #------------------------------------------MySQL query------------------------------------------------------------------
 
 #Query the summary table from the 4 tables using LEFT JOIN
-cursor.execute("SELECT ENSEMBL.*, UNIPROT.Protein_name, UNIPROT.Protein_function, GO.GO_term, GO.GO_domain, "
-               "GO.GO_description, STRING.* "
-               "FROM ENSEMBL "
-               "LEFT JOIN UNIPROT ON ENSEMBL.ENSEMBL_id=UNIPROT.ENSEMBL_id "
-               "LEFT JOIN GO ON ENSEMBL.ENSEMBL_id=GO.ENSEMBL_id "
-               "LEFT JOIN STRING ON ENSEMBL.Gene_name=STRING.Protein_1 OR ENSEMBL.Gene_name=STRING.Protein_2 ")
+query = """
+SELECT ENSEMBL.*,
+    UNIPROT.Protein_name,
+    UNIPROT.Protein_function,
+    GO.GO_term,
+    GO.GO_domain,
+    GO.GO_description
+FROM ENSEMBL
+LEFT JOIN UNIPROT
+    ON ENSEMBL.ENSEMBL_id = UNIPROT.ENSEMBL_id
+LEFT JOIN GO
+    ON ENSEMBL.ENSEMBL_id =GO.ENSEMBL_id;
+
+"""
+
+cursor.execute(query)
 
 #Fetch the table information and column name from MySQL then create a pandas dataframe
 integrated_table = cursor.fetchall()
@@ -272,5 +282,3 @@ integrated_table.to_csv('integrated_table.csv', index = False)
 
 db.close()
 print("Disconnected from mysql database")
-
-"""
