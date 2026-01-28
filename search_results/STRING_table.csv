@@ -1,0 +1,9 @@
+protein_1,protein_2,interaction_score
+Hoxc13,Hoxc6,0.408
+Hoxc13,Hoxc4,0.416
+Hoxc8,Hoxc5,0.435
+Hoxc8,Hoxc6,0.673
+Hoxc8,Hoxc4,0.746
+Hoxc5,Hoxc4,0.882
+Hoxc5,Hoxc6,0.921
+Hoxc6,Hoxc4,0.872

@@ -49,7 +49,7 @@ result = dataset.query(attributes=["ensembl_gene_id",
 ENSEMBL_table = pd.DataFrame(result)
 
 #Create a csv file to visualise if required
-#ENSEMBL_table.to_csv('ENSEMBL_table.csv', index = False)
+ENSEMBL_table.to_csv('search_results/ENSEMBL_table.csv', index = False)
 
 #---------------------------------------ENSEMBL database for GO---------------------------------------------------------
 
@@ -74,7 +74,7 @@ grouped_GO_table = GO_table.groupby('Gene stable ID').agg({
     'GO domain': join,
     'GO term definition': join}).reset_index()
 
-#grouped_GO_table.to_csv('Grouped_GO_table.csv', index = False)
+grouped_GO_table.to_csv('search_results/GO_table.csv', index = False)
 
 print("Search completed with ENSEMBL database")
 
@@ -123,7 +123,7 @@ UNIPROT_data = {
 UNIPROT_table = pd.DataFrame(UNIPROT_data)
 
 #Create a csv file can be visualised if required
-#UNIPROT_table.to_csv('UNIPROT_table.csv', index = False)
+UNIPROT_table.to_csv('search_results/UNIPROT_table.csv', index = False)
 
 print("Search completed with UNIPROT database")
 
@@ -163,7 +163,7 @@ string_data = {"protein_1" : protein_a,
 STRING_table = pd.DataFrame(string_data)
 
 #Create a csv file can be visualised if required
-#STRING_table.to_csv("STRING_table.csv", index = False)
+STRING_table.to_csv("search_results/STRING_table.csv", index = False)
 
 print("Search completed with STRING database")
 
@@ -184,9 +184,9 @@ print("Successfully connected to mysql database")
 
 cursor = db.cursor()
 
-#Create the database s2106664 if not existed and use the database
-cursor.execute("CREATE DATABASE IF NOT EXISTS s2106664")
-cursor.execute("USE s2106664")
+#Create the database gene_search_db if not existed and use the database
+cursor.execute("CREATE DATABASE IF NOT EXISTS gene_search_db")
+cursor.execute("USE gene_search_db")
 
 
 #Needed for testing in order to not make duplicate entry due to the PRIMARY KEY characteristics of ENSEMBL ID
