@@ -1,6 +1,4 @@
 .venv/
 .vscode/
-.DS_Store
 query.sql
 .env
-.pybiomart.sqlite
