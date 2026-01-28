@@ -2,3 +2,5 @@
 .vscode/
 query.sql
 .env
+.DS_Store
+.pybiomart.sqlite
